@@ -103,6 +103,7 @@ analyse_inherited_noncoding_enrichment <- function(hgnc = NULL, chrom, rare_homo
 #' @export
 #'
 #' @return a list of P values from tests, under LoF and functional tests.
+#' 
 test_enrichment <- function(freq, biallelic_lof, biallelic_func, lof_func, cohort_n, autozygous_rate=0) {
     
     # get the probability of getting more than or equal to the number of
