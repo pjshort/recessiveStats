@@ -55,9 +55,11 @@ get_cumulative_frequencies <- function(vars) {
     # find the loss of function variants
     lof_vars = vars[vars$CQ %in% lof_cq, ]
     functional_vars = vars[vars$CQ %in% functional_cq, ]
+    noncoding_vars = vars  # interested in any consequence
     
     lof_freq = sum(lof_vars$frequency, na.rm=TRUE)
     functional_freq = sum(functional_vars$frequency, na.rm=TRUE)
+    noncoding_freq = sum(noncoding_vars$frequency, na.rm=TRUE)  # interested in any consequence
     
     # What do we do if the frequency is zero? We won't be able to get meaningful
     # estimates of the enrichment of inherited variants. Estimate the frequency
@@ -68,12 +70,14 @@ get_cumulative_frequencies <- function(vars) {
     if (length(vars$AN[!is.na(vars$AN)]) != 0) {
         if (lof_freq == 0) { lof_freq = 1/(min(vars$AN, na.rm=TRUE) + 2) }
         if (functional_freq == 0) { functional_freq = 1/(min(vars$AN) + 2) }
+        if (noncoding_freq == 0) { noncoding_vars = 1/(min(vars$AN) + 2)}
     } else {
         if (lof_freq == 0) { lof_freq = NA }
         if (functional_freq == 0) { functional_freq = NA }
+        if (noncoding_freq == 0) { noncoding_vars = 1/(min(vars$AN) + 2)}
     }
     
-    frequencies = list(lof=lof_freq, functional=functional_freq)
+    frequencies = list(lof=lof_freq, functional=functional_freq, noncoding=noncoding_freq)
     
     return(frequencies)
 }

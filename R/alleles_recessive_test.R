@@ -52,6 +52,43 @@ analyse_inherited_enrichment <- function(hgnc, chrom, biallelic_lof, biallelic_f
     return(p_values)
 }
 
+#' test for enrichment of inherited variants in the DDD and ExAC datasets
+#'
+#' @param hgnc set to NULL
+#' @param chrom chromosome that the gene is on.
+#' @param rare_homozygotes number of probands homozygous for rare noncoding variants
+#' @param rare_compound_hets number of probands with two (possibly compound het) rare vars in region
+#' @param start start position of region to be investigated (if checking for
+#'        gene region defined by chromosome coordinates rather than a HGNC-based
+#'        gene region).
+#' @param end end position of region to be investigated (if checking for
+#'        gene region defined by chromosome coordinates rather than a HGNC-based
+#'        gene region).
+#' @param probands vector of probands who have inherited recessive variants in
+#'     the gene, or NULL.
+#' @param cohort_n number of probands in population.
+#' @param check_last_base whether to correct missense or synonymous G alleles at
+#'     the last base of exons to a LoF consequence.
+#' @param autozygous_rate rate of autozygosity within the gene in the probands.
+#' @export
+#'
+#' @return a list of P values from tests using the DDD population, the ExAC
+#'     population, under LoF and functional tests.
+analyse_inherited_noncoding_enrichment <- function(hgnc = NULL, chrom, rare_homozygotes, start=NULL, end=NULL, probands=NULL, cohort_n=3072, check_last_base=FALSE, autozygous_rate=0) {
+  
+  cat("extracting ddd frequencies\n")
+  ddd = try(get_ddd_variants_for_gene(hgnc, chrom, probands, start=start,
+                                      end=end, check_last_base=check_last_base), silent=TRUE)
+  if (class(ddd) != "try-error") {
+    ddd = get_cumulative_frequencies(ddd)
+    p_values = biallelic_lof_enrichment(ddd, rare_homozygotes, sum(unlist(cohort_n)), autozygous_rate)
+  } else {
+    p_values=list(lof=NA, func=NA, biallelic_lof_p=NA, lof_func_p=NA, biallelic_func_p=NA)
+  }
+  
+  return(p_values)
+}
+
 #' test for enrichment of inherited variants
 #'
 #' @param freq list of cumulative frequencies of variation in a population for
