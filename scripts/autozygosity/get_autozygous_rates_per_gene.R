@@ -96,6 +96,55 @@ get_autozygosity_per_gene <- function(path, regions, families, subset=NULL) {
     return(rates)
 }
 
+
+# autozygosity for conserved noncoding elements (CNEs), or just arbitrary genomic coordinates
+get_autozygosity_per_CNE <- function(path, regions, families, CNEs, subset=NULL) {
+  
+  # CNEs should have chr, start, and end as column names
+  
+  # Define the cohort size (we can't rely upon the number of unique probands
+  # in the regions dataframe, since many probands will not have autozygous
+  # regions).
+  # probands_n = length(Sys.glob(file.path(path, "*")))
+  probands_n = 3071
+  
+  # if we want to estimate the rates for consanguinous probands only, we take
+  # a subset of the autozygous regions
+  if (!is.null(subset)) {
+    probands_n = length(subset)
+    regions = regions[regions$sample_id %in% subset, ]
+  }
+  
+  CNE_ids = paste(CNEs$chr, CNEs$start, CNEs$end, sep = ".")
+  
+  rates = data.frame(region_id = CNE_ids, chrom=CNE_ids$chr, count=NA, rate=NA,
+                     setNames(replicate(length(unique(regions$sample_id)), FALSE, simplify=F), sort(unique(regions$sample_id))))
+  
+  # sapply(sort(unique(regions$sample_id)), function(x) rates[[x]] = NA)
+  for (pos in 1:nrow(CNEs)) {
+    # get the coordinates for the gene
+    chrom = CNEs$chr[pos]
+    start_pos = CNEs$start[pos]
+    end_pos = CNEs$stop[pos]
+    
+    # find the autozygous regions that overlap the gene region
+    in_chrom = regions[regions$chrom == chrom, ]
+    overlapping = in_chrom[in_chrom$end_pos > start_pos
+                           & in_chrom$start_pos < end_pos, ]
+    
+    probands = unique(overlapping$sample_id)
+    probands = get_independent_probands(families, probands)
+    rates$count[pos] = length(probands)
+    rates$rate[pos] = rates$count[pos]/probands_n
+    rates[pos, probands] = TRUE
+  }
+  
+  # remove the chrX rates, since all of the male probands appear autozygous
+  rates = rates[rates$chrom != "X", ]
+  
+  return(rates)
+}
+
 plot_autozygosity <- function(all_probands, signif_path) {
     # exclude chrX, since males always appear autozygous, and I hadn't removed
     # them for this analysis run
