@@ -117,7 +117,7 @@ get_autozygosity_per_CNE <- function(path, regions, families, CNEs, subset=NULL)
   
   CNE_ids = paste(CNEs$chr, CNEs$start, CNEs$end, sep = ".")
   
-  rates = data.frame(region_id = CNE_ids, chrom=CNE_ids$chr, count=NA, rate=NA,
+  rates = data.frame(region_id = CNE_ids, chrom=CNEs$chr, count=NA, rate=NA,
                      setNames(replicate(length(unique(regions$sample_id)), FALSE, simplify=F), sort(unique(regions$sample_id))))
   
   # sapply(sort(unique(regions$sample_id)), function(x) rates[[x]] = NA)
@@ -125,7 +125,7 @@ get_autozygosity_per_CNE <- function(path, regions, families, CNEs, subset=NULL)
     # get the coordinates for the gene
     chrom = CNEs$chr[pos]
     start_pos = CNEs$start[pos]
-    end_pos = CNEs$stop[pos]
+    end_pos = CNEs$end[pos]
     
     # find the autozygous regions that overlap the gene region
     in_chrom = regions[regions$chrom == chrom, ]
