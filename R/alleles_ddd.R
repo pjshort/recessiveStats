@@ -81,8 +81,10 @@ get_lines_from_vep_vcf <- function(chrom, start, end) {
     # get the byte offsets for where the data lies within the file (this is a
     # workaround to speed access to the data, while not having tabix indexes).
     # PJS changed 10,000 -> 40,000 because some noncoding regions were not covered fully
-    file_start = max(find_file_pos(vep_path, start) - 40000, 0)
-    file_end = min(find_file_pos(vep_path, end) + 40000, file.info(vep_path)$size)
+  
+    seek_margin_size = 10000
+    file_start = max(find_file_pos(vep_path, start) - seek_margin_size, 0)
+    file_end = min(find_file_pos(vep_path, end) + seek_margin_size, file.info(vep_path)$size)
     
     # load the lines from the file (assume the lines are about 400 bytes long)
     line_length = 400
@@ -92,11 +94,30 @@ get_lines_from_vep_vcf <- function(chrom, start, end) {
     vep = read.table(con, skip=1, sep="\t", nrows=lines_n, stringsAsFactors=FALSE)
     names(vep) = c("chrom", "pos", "id", "ref", "alt", "qual", "filter", "info", "format")
     close(con)
+  
+    # PJS added this while loop to update seek margin so no sites are missed
+    # Jeremy's original below in comment:
     
     # make sure we have captured variants that lie outside the gene sites,
     # otherwise we don't know if we have missed any variants inside the gene range
-    stopifnot(file_start == 0 | vep$pos[1] < start)
-    stopifnot(file_end == file.info(vep_path)$size | vep$pos[nrow(vep)] > end)
+    # stopifnot(file_start == 0 | vep$pos[1] < start)
+    # stopifnot(file_end == file.info(vep_path)$size | vep$pos[nrow(vep)] > end)
+    while(!((file_start == 0 | vep$pos[1] < start) & (file_end == file.info(vep_path)$size | vep$pos[nrow(vep)] > end))){
+      seek_margin_size = seek_margin_size + 30000
+      file_start = max(find_file_pos(vep_path, start) - seek_margin_size, 0)
+      file_end = min(find_file_pos(vep_path, end) + seek_margin_size, file.info(vep_path)$size)
+      
+      # load the lines from the file (assume the lines are about 400 bytes long)
+      line_length = 400
+      con = file(vep_path, open="r")
+      seek(con, file_start, origin="start")
+      lines_n = (file_end - file_start) / line_length
+      vep = read.table(con, skip=1, sep="\t", nrows=lines_n, stringsAsFactors=FALSE)
+      names(vep) = c("chrom", "pos", "id", "ref", "alt", "qual", "filter", "info", "format")
+      close(con)
+      
+    }
+    
     
     return(vep)
 }
