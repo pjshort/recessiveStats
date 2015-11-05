@@ -74,10 +74,10 @@ analyse_inherited_enrichment <- function(hgnc, chrom, biallelic_lof, biallelic_f
 #'
 #' @return a list of P values from tests using the DDD population, the ExAC
 #'     population, under LoF and functional tests.
-analyse_inherited_noncoding_enrichment <- function(hgnc = NULL, chrom, rare_homozygotes, start=NULL, end=NULL, probands=NULL, cohort_n=3072, check_last_base=FALSE, autozygous_rate=0) {
+analyse_inherited_noncoding_enrichment <- function(chrom, rare_homozygotes, start=NULL, end=NULL, probands=NULL, cohort_n=3072, check_last_base=FALSE, autozygous_rate=0) {
   
   cat("extracting ddd frequencies\n")
-  ddd = try(get_ddd_variants_for_gene(hgnc, chrom, probands, start=start,
+  ddd = try(get_ddd_variants_for_gene(hgnc = NULL, chrom, probands, start=start,
                                       end=end, check_last_base=check_last_base), silent=TRUE)
   if (class(ddd) != "try-error") {
     ddd = get_cumulative_frequencies(ddd)
