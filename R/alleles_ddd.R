@@ -290,7 +290,10 @@ remove_easy_nonfunctional <- function(vars, vep) {
 #'
 #' @return dataframe of variants
 convert_genotypes <- function(vars, vep, probands) {
-    vars = remove_easy_nonfunctional(vars, vep)
+    
+    # PJS removing this line - some noncoding regions show only 'easy nonfunctional' variants
+    # error is thrown downstream (because vars is empty)
+    #vars = remove_easy_nonfunctional(vars, vep)
     
     cat("converting DDD genotypes\n")
     # convert the genotype matrix to a dataframe where each column is for a
@@ -348,6 +351,7 @@ get_ddd_variants_for_gene <- function(hgnc, chrom, start=NULL, end=NULL,
     probands=NULL, check_last_base=FALSE) {
     
     vcf_path = Sys.glob(file.path(DDD_VCFS_DIR, paste(chrom, "\\:1-*.vcf.gz", sep="")))
+    print(vcf_path)
     
     if (!is.null(hgnc) & is.null(start) & is.null(end)) {
         rows = get_gene_coordinates(hgnc, chrom)
