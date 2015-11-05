@@ -52,7 +52,7 @@ get_independent_probands <- function(families, probands) {
   return(independent_probands)
 }
 
-get_autozygosity_per_CNE <- function(path, regions, families, CNEs, subset=NULL) {
+get_autozygosity_per_CNE <- function(path, regions, families, CNEs, probands_n, subset=NULL) {
   
   # CNEs should have chr, start, and end as column names
   
@@ -99,8 +99,6 @@ get_autozygosity_per_CNE <- function(path, regions, families, CNEs, subset=NULL)
   return(rates)
 }
 
-
-
 # run from some sub-directory within ~/software/CNE
 CNEs = read.table("../data/noncoding_regions.txt", sep = "\t", header = TRUE)
 CNEs = CNEs[,c("chr", "start", "stop")]
@@ -112,10 +110,8 @@ eur_probands = proband_ancestry$person_id[proband_ancestry$group == "EUR"]
 families = get_families(FAMILIES_PATH)
 regions_per_proband = get_autozygous_regions(AUTOZYGOSITY_DIR)
 
-#restrict only to probands with EUR ancestry
-regions_per_proband = regions_per_proband[regions_per_proband$sample_id %in% eur_probands]
-
-all_autozygous = get_autozygosity_per_CNE(AUTOZYGOSITY_DIR, regions_per_proband, families, CNEs)
+#calculate autozygosity subsetting to to probands with EUR ancestry
+all_autozygous = get_autozygosity_per_CNE(AUTOZYGOSITY_DIR, regions_per_proband, families, CNEs, subset = eur_probands)
 
 all_autozygous = all_autozygous[, 1:4]
 write.table(all_autozygous, file="../data/autozygosity.all_CNEs.EUR_probands.tsv", sep="\t", row.names=FALSE, quote=FALSE)
