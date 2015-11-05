@@ -80,8 +80,9 @@ get_lines_from_vep_vcf <- function(chrom, start, end) {
     
     # get the byte offsets for where the data lies within the file (this is a
     # workaround to speed access to the data, while not having tabix indexes).
-    file_start = max(find_file_pos(vep_path, start) - 10000, 0)
-    file_end = min(find_file_pos(vep_path, end) + 10000, file.info(vep_path)$size)
+    # PJS changed 10,000 -> 40,000 because some noncoding regions were not covered fully
+    file_start = max(find_file_pos(vep_path, start) - 40000, 0)
+    file_end = min(find_file_pos(vep_path, end) + 40000, file.info(vep_path)$size)
     
     # load the lines from the file (assume the lines are about 400 bytes long)
     line_length = 400
