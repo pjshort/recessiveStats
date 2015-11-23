@@ -89,6 +89,29 @@ analyse_inherited_noncoding_enrichment <- function(chrom, rare_homozygotes, star
   return(p_values)
 }
 
+analyse_gene_target_CNE_enrichment <- function(chrom, rare_homozygotes, start=NULL, end=NULL, probands=NULL, cohort_n=3072, check_last_base=FALSE, autozygous_rate=0) {
+  # re-factoring of analyse_inherited_noncoding_enrichment to group together several CNEs targetting the same gene
+  # chrom, start, and end are assumed to be a vector of multiple regions
+  cat("extracting ddd frequencies\n")
+  
+  # probands should be LIST of character vectors with proband ids for probands with rare homs in each region
+  
+  ddd = mapply(get_ddd_variants_for_gene, chrom = chrom, start = start, end = end, probands = probands, MoreArgs = list(hgnc = NULL, check_last_base=check_last_base), SIMPLIFY = FALSE)
+  ddd = do.call(rbind, ddd)
+  
+  # we can feed the full list of variants pulled from get_ddd_variants_for_gene to get_cumulative frequencies
+  # this will give us cumulative frequency of rare vars over all of the CNEs combined
+  
+  if (class(ddd) != "try-error") {
+    ddd = get_cumulative_frequencies(ddd)
+    p_values = biallelic_lof_enrichment(ddd, rare_homozygotes, sum(unlist(cohort_n)), autozygous_rate)
+  } else {
+    p_values=list(lof=NA, func=NA, biallelic_lof_p=NA, lof_func_p=NA, biallelic_func_p=NA)
+  }
+  
+  return(p_values)
+}
+
 #' test for enrichment of inherited variants
 #'
 #' @param freq list of cumulative frequencies of variation in a population for
