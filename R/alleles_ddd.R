@@ -134,7 +134,7 @@ get_ddd_vep_annotations <- function(chrom, start, end) {
     
     vep = get_lines_from_vep_vcf(chrom, start, end)
     vep = vep[vep$pos > start & vep$pos < end, ]
-    
+
     vep$HGNC = NA
     vep$CQ = NA
     for (pos in 1:nrow(vep)) {
@@ -371,8 +371,8 @@ convert_genotypes <- function(vars, vep, probands) {
 get_ddd_variants_for_gene <- function(hgnc, chrom, start=NULL, end=NULL,
     probands=NULL, check_last_base=FALSE) {
     
-    vcf_path = Sys.glob(file.path(DDD_VCFS_DIR, paste(chrom, "\\:1-*.vcf.gz", sep="")))
-    print(vcf_path)
+  vcf_path = Sys.glob(file.path(DDD_VCFS_DIR, paste(chrom, "\\:1-*.vcf.gz", sep="")))
+  print(vcf_path)
     
     if (!is.null(hgnc) & is.null(start) & is.null(end)) {
         rows = get_gene_coordinates(hgnc, chrom)
@@ -417,4 +417,57 @@ get_ddd_variants_for_gene <- function(hgnc, chrom, start=NULL, end=NULL,
     vars$HGNC = NULL
         
     return(vars)
+}
+
+# as some of the CNEs are very small and may have zero rare variants in the unaffected proband,
+# we will consider all of the CNEs together in a larger interval and slice out the un-needed variants later.
+
+get_ddd_variants_for_CNEs <- function(chrom, start, end,
+                                      probands=NULL, check_last_base=FALSE) {
+  
+  # chrom, start, end are vectors of small CNEs - a large region (from min start to max end)
+  # will be used to find variants in unaffected parents, then these will be sliced down 
+  # to include those only in original CNE set the smaller regions
+  
+  chrom = gsub("^chr", "", chrom)
+  
+  # make 'super-region' to pull variants from
+  c = chrom[1]
+  s = min(start)
+  e = max(end)
+  
+  vcf_path = Sys.glob(file.path(DDD_VCFS_DIR, paste(c, "\\:1-*.vcf.gz", sep="")))
+  print(vcf_path)
+  
+  cat(paste("loading DDD vcfs for ", c, ":", s, "-", e, "\n", sep = ""))
+  
+  # extract variants within the region from the VCF
+  vars = seqminer::readVCFToListByRange(fileName=vcf_path,
+                                        range=paste(c, ":", s, "-", e, sep=""),
+                                        annoType="",
+                                        vcfColumn=c("CHROM", "POS", "REF", "ALT"),
+                                        vcfInfo=c(),
+                                        vcfIndv=c("GT"))
+  
+  vep = get_ddd_vep_annotations(c, s, e)
+  vars = convert_genotypes(vars, vep, probands)
+  
+  vars = merge(vars, vep, by.x=c("CHROM", "POS", "REF", "ALT"),
+               by.y=c("chrom", "pos", "ref", "alt"), all.x=TRUE)
+  
+  vars = standardise_multiple_alt_variants(vars, include_hgnc=TRUE)
+  
+  # remove vars that are outside of the actual regions of interest
+  in_CNEs = sapply(vars$POS, function(p) any(p > start & p < end))
+  vars = vars[in_CNEs,]
+  
+  # remove alleles with none observed in the unaffected DDD parents, and
+  # alleles not in the required gene
+  vars = vars[vars$AC > 0, ]
+  if (!is.null(hgnc)) { vars = vars[vars$HGNC == hgnc, ] }
+  
+  # remove the HGNC column, to match the output for the ExAC functions
+  vars$HGNC = NULL
+  
+  return(vars)
 }

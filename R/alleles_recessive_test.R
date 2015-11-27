@@ -96,11 +96,13 @@ analyse_gene_target_CNE_enrichment <- function(chrom, rare_homozygotes, start=NU
   
   # probands should be LIST of character vectors with proband ids for probands with rare homs in each region
   
-  ddd = mapply(get_ddd_variants_for_gene, chrom = chrom, start = start, end = end, probands = probands, MoreArgs = list(hgnc = NULL, check_last_base=check_last_base), SIMPLIFY = FALSE)
-  ddd = do.call(rbind, ddd)
+  ddd = get_ddd_variants_for_CNEs(chrom, start, end, probands, check_last_base=check_last_base)
   
   # we can feed the full list of variants pulled from get_ddd_variants_for_gene to get_cumulative frequencies
   # this will give us cumulative frequency of rare vars over all of the CNEs combined
+  
+  # for small regions, there is a chance that DDD will have no rare variants - in these cases,
+  # we may need to add a pseudocount?
   
   if (class(ddd) != "try-error") {
     ddd = get_cumulative_frequencies(ddd)
