@@ -89,6 +89,22 @@ analyse_inherited_noncoding_enrichment <- function(chrom, rare_homozygotes, star
   return(p_values)
 }
 
+#' test for enrichment of inherited variants in the DDD and ExAC datasets
+#'
+#' @param chrom chromosome that the gene target/CNEs are on
+#' @param rare_homozygotes number of probands homozygous for rare noncoding variants
+#' @param start vector of start positions of regions to be investigated 
+#' @param end vector of end positions of region to be investigated 
+#' @param probands vector of probands who have inherited recessive variants in
+#'     the gene, or NULL.
+#' @param cohort_n number of probands in population.
+#' @param check_last_base whether to correct missense or synonymous G alleles at
+#'     the last base of exons to a LoF consequence.
+#' @param autozygous_rate weighted rate of autozygosity across the set of variants
+#' @export
+#'
+#' @return a list of P values from tests using the DDD population, the ExAC
+#'     population, under LoF and functional tests.
 analyse_gene_target_CNE_enrichment <- function(chrom, rare_homozygotes, start=NULL, end=NULL, probands=NULL, cohort_n=3072, check_last_base=FALSE, autozygous_rate=0) {
   # re-factoring of analyse_inherited_noncoding_enrichment to group together several CNEs targetting the same gene
   # chrom, start, and end are assumed to be a vector of multiple regions

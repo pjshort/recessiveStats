@@ -464,7 +464,6 @@ get_ddd_variants_for_CNEs <- function(chrom, start, end,
   # remove alleles with none observed in the unaffected DDD parents, and
   # alleles not in the required gene
   vars = vars[vars$AC > 0, ]
-  if (!is.null(hgnc)) { vars = vars[vars$HGNC == hgnc, ] }
   
   # remove the HGNC column, to match the output for the ExAC functions
   vars$HGNC = NULL
