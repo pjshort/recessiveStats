@@ -431,26 +431,33 @@ get_ddd_variants_for_CNEs <- function(chrom, start, end,
   
   chrom = gsub("^chr", "", chrom)
   
-  # make 'super-region' to pull variants from
-  c = chrom[1]
-  s = min(start)
-  e = max(end)
+  # add a buffer to any regions that are less than 400 bp in length (200 bp on either side)
+  # this will guarantee at least one variant in the region ( it will be sliced out later )
+  small_regions = (end - start) < 400
+  s = start
+  s[small_regions] = s[small_regions] - 200
+  e = end
+  e[small_regions] = e[small_regions] + 200
   
-  vcf_path = Sys.glob(file.path(DDD_VCFS_DIR, paste(c, "\\:1-*.vcf.gz", sep="")))
-  print(vcf_path)
+  vcf_path = Sys.glob(file.path(DDD_VCFS_DIR, paste(chrom[1], "\\:1-*.vcf.gz", sep="")))
   
-  cat(paste("loading DDD vcfs for ", c, ":", s, "-", e, "\n", sep = ""))
+  cat(paste("loading DDD vcfs for ", chrom, ":", s, "-", e, "\n", sep = ""))
+  
+  ranges = paste(chrom, ":", s, "-", e, sep="")
   
   # extract variants within the region from the VCF
-  vars = seqminer::readVCFToListByRange(fileName=vcf_path,
-                                        range=paste(c, ":", s, "-", e, sep=""),
+  vars = sapply(ranges, function(RANGE) seqminer::readVCFToListByRange(fileName=vcf_path,
+                                        range= RANGE,
                                         annoType="",
                                         vcfColumn=c("CHROM", "POS", "REF", "ALT"),
                                         vcfInfo=c(),
-                                        vcfIndv=c("GT"))
+                                        vcfIndv=c("GT")), simplify = FALSE)
   
-  vep = get_ddd_vep_annotations(c, s, e)
-  vars = convert_genotypes(vars, vep, probands)
+  vep = mapply(get_ddd_vep_annotations, chrom, s, e, SIMPLIFY = FALSE)
+  vep = do.call(rbind, vep)
+  
+  vars = sapply(vars, function(v) convert_genotypes(v, vep, probands), simplify = FALSE)
+  vars = do.call(rbind, vars)
   
   vars = merge(vars, vep, by.x=c("CHROM", "POS", "REF", "ALT"),
                by.y=c("chrom", "pos", "ref", "alt"), all.x=TRUE)
